@@ -10,19 +10,24 @@ from flask_jwt_extended import create_access_token, jwt_required, JWTManager, ge
 app = Flask(__name__)
 
 # URL do front-end (GitHub Pages) - pega do Render
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://mnrznn.github.io/Do-Vinil-ao-Digital/')  # ex: https://mnrznn.github.io
-
-# Configuração do CORS (essencial para "Failed to fetch")
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://mnrznn.github.io/Do-Vinil-ao-Digital/')
 CORS(app, resources={r"/*": {"origins": FRONTEND_URL}}, supports_credentials=True)
 
 # Banco de Dados (MySQL via SQLAlchemy)
-# Use DATABASE_URL configurada no Render, ex:
-# mysql+pymysql://root:senha@host:porta/banco
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('mysql+pymysql://root:mSSAEaamMLibNKtugQjUFvWPIHdsPVgy@centerbeam.proxy.rlwy.net:49185/railway')
+# Pega da variável de ambiente DATABASE_URL
+database_url = os.environ.get('DATABASE_URL')
+if not database_url:
+    raise ValueError("A variável de ambiente DATABASE_URL não está definida!")
+
+# Se o Render passar mysql://, transforma pra pymysql
+if database_url.startswith("mysql://"):
+    database_url = database_url.replace("mysql://", "mysql+pymysql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # JWT
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'minha_chave_secreta_padrao')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 
 db = SQLAlchemy(app)
@@ -117,4 +122,3 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-
