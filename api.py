@@ -5,35 +5,31 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, JWTManager, get_jwt_identity
+from dotenv import load_dotenv
+
+load_dotenv() # Carrega variáveis de ambiente de um arquivo .env
 
 # --- CONFIGURAÇÃO ---
 app = Flask(__name__)
 
-# URL do front-end (GitHub Pages) - pega do Render
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://mnrznn.github.io/Do-Vinil-ao-Digital/')
-CORS(app, resources={r"/*": {"origins": FRONTEND_URL}}, supports_credentials=True)
+# Configuração do CORS para permitir requisições do front-end
+# O URL do front-end é pego de uma variável de ambiente para flexibilidade
+FRONTEND_URL = os.environ.get('FRONTEND_URL', '*')
+CORS(app, resources={r"/*": {"origins": FRONTEND_URL}})
 
-# Banco de Dados (MySQL via SQLAlchemy)
-# Pega da variável de ambiente DATABASE_URL
-database_url = os.environ.get('DATABASE_URL')
-if not database_url:
-    raise ValueError("A variável de ambiente DATABASE_URL não está definida!")
-
-# Se o Render passar mysql://, transforma pra pymysql
-if database_url.startswith("mysql://"):
-    database_url = database_url.replace("mysql://", "mysql+pymysql://", 1)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+# Configuração do Banco de Dados a partir de uma URL de conexão (ideal para produção)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# JWT
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'minha_chave_secreta_padrao')
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
+# Configuração do JWT (JSON Web Tokens)
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY') # Chave secreta forte
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=24) # Token expira em 24 horas
 
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
 
-# --- MODELOS ---
+
+# --- MODELOS DO BANCO DE DADOS ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
@@ -50,7 +46,8 @@ class Record(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# --- ROTAS ---
+
+# --- ROTAS DA API ---
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -59,10 +56,10 @@ def register():
 
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'message': 'Este email já está em uso.'}), 409
-
+        
     hashed_password = generate_password_hash(data['password'], method='pbkdf2:sha256')
     new_user = User(name=data['name'], email=data['email'], password_hash=hashed_password)
-
+    
     try:
         db.session.add(new_user)
         db.session.commit()
@@ -76,38 +73,47 @@ def login():
     data = request.get_json()
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Email e senha são obrigatórios.'}), 400
-
+        
     user = User.query.filter_by(email=data['email']).first()
+    
     if not user or not check_password_hash(user.password_hash, data['password']):
         return jsonify({'message': 'Credenciais inválidas.'}), 401
-
+    
     access_token = create_access_token(identity=user.id)
     return jsonify(access_token=access_token)
 
+# Rota protegida: Requer um token JWT válido
 @app.route('/collection', methods=['GET'])
 @jwt_required()
 def get_collection():
     current_user_id = get_jwt_identity()
     records = Record.query.filter_by(user_id=current_user_id).order_by(Record.created_at.desc()).all()
-    output = [{'id': r.id, 'album': r.album, 'artist': r.artist, 'year': r.year, 'cover_url': r.cover_url} for r in records]
+    
+    output = []
+    for record in records:
+        record_data = {
+            'id': record.id, 'album': record.album, 'artist': record.artist,
+            'year': record.year, 'cover_url': record.cover_url
+        }
+        output.append(record_data)
+        
     return jsonify(output)
 
+# Rota protegida: Requer um token JWT válido
 @app.route('/records', methods=['POST'])
 @jwt_required()
 def add_record():
     current_user_id = get_jwt_identity()
     data = request.get_json()
+    
     if not data or not data.get('album') or not data.get('artist'):
-        return jsonify({'message': 'Álbum e Artista são obrigatórios.'}), 400
-
+         return jsonify({'message': 'Álbum e Artista são obrigatórios.'}), 400
+         
     new_record = Record(
-        album=data['album'],
-        artist=data['artist'],
-        year=data.get('year'),
-        cover_url=data.get('cover_url'),
-        user_id=current_user_id
+        album=data['album'], artist=data['artist'], year=data.get('year'),
+        cover_url=data.get('cover_url'), user_id=current_user_id
     )
-
+    
     try:
         db.session.add(new_record)
         db.session.commit()
@@ -116,9 +122,11 @@ def add_record():
         db.session.rollback()
         return jsonify({'message': f'Erro interno do servidor: {str(e)}'}), 500
 
-# --- INICIALIZAÇÃO ---
 if __name__ == '__main__':
     with app.app_context():
+        # Cria as tabelas no banco de dados se elas não existirem
         db.create_all()
+    # A porta é pega de uma variável de ambiente, padrão para 5000 localmente
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
