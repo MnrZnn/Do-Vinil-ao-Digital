@@ -15,7 +15,7 @@ app = Flask(__name__)
 # Configuração do CORS para permitir requisições do front-end
 # O URL do front-end é pego de uma variável de ambiente para flexibilidade
 FRONTEND_URL = os.environ.get('FRONTEND_URL', '*')
-CORS(app, resources={r"/*": {"origins": FRONTEND_URL}})
+CORS(app, resources={r"/*": {"origins": "https://mnrznn.github.io"}}, supports_credentials=True)
 
 # Configuração do Banco de Dados a partir de uma URL de conexão (ideal para produção)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
@@ -129,4 +129,5 @@ if __name__ == '__main__':
     # A porta é pega de uma variável de ambiente, padrão para 5000 localmente
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
 
