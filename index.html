@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Do Vinil ao Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #121212; color: #E0E0E0; }
+        .bg-card { background-color: #1E1E1E; }
+        .bg-input { background-color: #2A2A2A; }
+        .border-custom { border-color: #383838; }
+        .btn-primary { background-color: #1DB954; color: #FFFFFF; }
+        .btn-primary:hover { background-color: #1ED760; }
+        .btn-primary:disabled { background-color: #555; cursor: not-allowed; }
+        .placeholder-custom::placeholder { color: #888888; }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body x-data="app()" x-cloak>
+
+    <!-- Main Container -->
+    <div class="min-h-screen">
+        <!-- Notificação Global -->
+        <div x-show="notification.show" 
+             class="fixed top-5 right-5 z-50 p-4 rounded-md shadow-lg text-white"
+             :class="{'bg-green-600': notification.type === 'success', 'bg-red-600': notification.type === 'error'}"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-x-full"
+             x-transition:enter-end="opacity-100 transform translate-x-0"
+             x-transition:leave="transition ease-in duration-300"
+             x-transition:leave-start="opacity-100 transform translate-x-0"
+             x-transition:leave-end="opacity-0 transform translate-x-full">
+            <p x-text="notification.message"></p>
+        </div>
+
+        <!-- ===== LANDING PAGE ===== -->
+        <div id="landing-page" x-show="!isLoggedIn">
+            <header class="p-4 flex justify-between items-center bg-card shadow-lg">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="disc-3" class="text-green-400"></i>
+                    <h1 class="text-xl font-bold text-white">Do Vinil ao Digital</h1>
+                </div>
+                <nav>
+                    <button @click="view = 'login'" class="px-4 py-2 text-sm font-medium rounded-md hover:bg-gray-700">Login</button>
+                    <button @click="view = 'register'" class="ml-2 px-4 py-2 text-sm font-medium rounded-md btn-primary">Cadastre-se</button>
+                </nav>
+            </header>
+
+            <div x-show="view === 'landing'">
+                <main class="text-center py-20 px-4">
+                    <h2 class="text-5xl font-bold text-white mb-4">Sua coleção de vinil, organizada e segura.</h2>
+                    <p class="text-lg text-gray-300 max-w-2xl mx-auto mb-8">Digitalize, catalogue e compartilhe sua paixão pela música com total segurança.</p>
+                    <button @click="view = 'register'" class="px-8 py-3 text-lg font-semibold rounded-full btn-primary">Comece Agora</button>
+                </main>
+                <section class="py-16 bg-black bg-opacity-20">
+                     <div class="container mx-auto px-4">
+                        <h3 class="text-3xl font-bold text-center mb-12">Recursos da Plataforma</h3>
+                        <div class="grid md:grid-cols-3 gap-8 text-center">
+                            <div class="bg-card p-6 rounded-lg"><i data-lucide="book-marked" class="mx-auto h-12 w-12 text-green-400 mb-4"></i><h4 class="text-xl font-semibold mb-2">Catalogação Detalhada</h4><p class="text-gray-400">Organize seus discos com informações completas.</p></div>
+                            <div class="bg-card p-6 rounded-lg"><i data-lucide="shield-check" class="mx-auto h-12 w-12 text-green-400 mb-4"></i><h4 class="text-xl font-semibold mb-2">Segurança Avançada</h4><p class="text-gray-400">Seus dados protegidos com autenticação segura.</p></div>
+                            <div class="bg-card p-6 rounded-lg"><i data-lucide="users" class="mx-auto h-12 w-12 text-green-400 mb-4"></i><h4 class="text-xl font-semibold mb-2">Comunidade de Colecionadores</h4><p class="text-gray-400">Conecte-se com outros amantes da música.</p></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            
+            <div x-show="view === 'login' || view === 'register'" class="flex items-center justify-center min-h-[calc(100vh-68px)]">
+                <!-- LOGIN -->
+                <div x-show="view === 'login'" class="w-full max-w-md p-8 space-y-6 bg-card rounded-xl shadow-lg">
+                    <div class="text-center"><div class="flex items-center justify-center space-x-2 mb-4"><i data-lucide="disc-3" class="text-green-400 h-8 w-8"></i><h1 class="text-2xl font-bold text-white">Login</h1></div></div>
+                    <form @submit.prevent="login" class="space-y-4">
+                        <div><label for="login-email" class="text-sm font-medium text-gray-300">Email</label><input x-model="credentials.email" id="login-email" type="email" required class="w-full mt-1 p-3 bg-input border border-custom rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-custom" placeholder="seu@email.com"></div>
+                        <div><label for="login-password" class="text-sm font-medium text-gray-300">Senha</label><input x-model="credentials.password" id="login-password" type="password" required class="w-full mt-1 p-3 bg-input border border-custom rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="••••••••"></div>
+                        <button type="submit" :disabled="loading" class="w-full py-3 font-semibold rounded-md btn-primary flex items-center justify-center"><span x-show="!loading">Entrar</span><span x-show="loading" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span></button>
+                    </form>
+                    <p class="text-center text-sm text-gray-400">Não tem uma conta? <button @click="view = 'register'" class="font-medium text-green-400 hover:underline">Cadastre-se</button></p>
+                </div>
+                <!-- REGISTER -->
+                <div x-show="view === 'register'" class="w-full max-w-md p-8 space-y-6 bg-card rounded-xl shadow-lg">
+                    <div class="text-center"><div class="flex items-center justify-center space-x-2 mb-4"><i data-lucide="disc-3" class="text-green-400 h-8 w-8"></i><h1 class="text-2xl font-bold text-white">Crie sua Conta</h1></div></div>
+                    <form @submit.prevent="register" class="space-y-4">
+                        <div><label for="register-name" class="text-sm font-medium text-gray-300">Nome</label><input x-model="newUser.name" id="register-name" type="text" required class="w-full mt-1 p-3 bg-input border border-custom rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-custom" placeholder="Seu Nome Completo"></div>
+                        <div><label for="register-email" class="text-sm font-medium text-gray-300">Email</label><input x-model="newUser.email" id="register-email" type="email" required class="w-full mt-1 p-3 bg-input border border-custom rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-custom" placeholder="seu@email.com"></div>
+                        <div><label for="register-password" class="text-sm font-medium text-gray-300">Senha</label><input x-model="newUser.password" id="register-password" type="password" required class="w-full mt-1 p-3 bg-input border border-custom rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Crie uma senha forte"></div>
+                        <button type="submit" :disabled="loading" class="w-full py-3 font-semibold rounded-md btn-primary flex items-center justify-center"><span x-show="!loading">Criar Conta</span><span x-show="loading" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span></button>
+                    </form>
+                    <p class="text-center text-sm text-gray-400">Já tem uma conta? <button @click="view = 'login'" class="font-medium text-green-400 hover:underline">Faça Login</button></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== APP DASHBOARD ===== -->
+        <div id="app-dashboard" x-show="isLoggedIn" class="flex h-screen">
+            <!-- Sidebar -->
+            <aside class="w-64 bg-black flex-shrink-0 flex flex-col">
+                <div class="p-4 flex items-center space-x-2 border-b border-custom"><i data-lucide="disc-3" class="text-green-400"></i><h1 class="text-xl font-bold text-white">Do Vinil ao Digital</h1></div>
+                <nav class="flex-1 p-4 space-y-2">
+                    <a href="#" @click.prevent="appView = 'collection'" :class="{'bg-green-500 text-white': appView === 'collection', 'hover:bg-gray-700': appView !== 'collection'}" class="flex items-center space-x-3 px-3 py-2 rounded-md"><i data-lucide="album"></i><span>Minha Coleção</span></a>
+                    <a href="#" @click.prevent="appView = 'add-record'" :class="{'bg-green-500 text-white': appView === 'add-record', 'hover:bg-gray-700': appView !== 'add-record'}" class="flex items-center space-x-3 px-3 py-2 rounded-md"><i data-lucide="plus-circle"></i><span>Adicionar Disco</span></a>
+                    <a href="#" @click.prevent="appView = 'community'" :class="{'bg-green-500 text-white': appView === 'community', 'hover:bg-gray-700': appView !== 'community'}" class="flex items-center space-x-3 px-3 py-2 rounded-md"><i data-lucide="users"></i><span>Comunidade</span></a>
+                </nav>
+                <div class="p-4 border-t border-custom"><a href="#" @click.prevent="logout()" class="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-700"><i data-lucide="log-out"></i><span>Sair</span></a></div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-8 overflow-y-auto">
+                <!-- My Collection View -->
+                <div x-show="appView === 'collection'">
+                    <h2 class="text-3xl font-bold mb-6">Minha Coleção (<span x-text="collection.length"></span>)</h2>
+                    <div v-if="collection.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                        <template x-for="record in collection" :key="record.id">
+                            <div class="bg-card rounded-lg overflow-hidden shadow-lg transform hover:-translate-y-1 transition-transform duration-300">
+                                <img :src="record.cover_url || `https://placehold.co/300x300/1E1E1E/E0E0E0?text=${record.album.charAt(0)}`" alt="Capa do album" class="w-full h-auto object-cover aspect-square">
+                                <div class="p-3"><h3 class="font-bold text-white truncate" x-text="record.album"></h3><p class="text-sm text-gray-400 truncate" x-text="record.artist"></p></div>
+                            </div>
+                        </template>
+                    </div>
+                     <div x-show="collection.length === 0" class="text-center py-20 bg-card rounded-lg">
+                        <i data-lucide="folder-x" class="mx-auto h-16 w-16 text-gray-500 mb-4"></i><h3 class="text-xl font-semibold">Sua coleção está vazia</h3>
+                        <p class="text-gray-400 mt-2">Comece adicionando seu primeiro disco!</p>
+                        <button @click="appView = 'add-record'" class="mt-6 px-6 py-2 rounded-full btn-primary">Adicionar Disco</button>
+                    </div>
+                </div>
+                <!-- Add Record View -->
+                <div x-show="appView === 'add-record'">
+                    <h2 class="text-3xl font-bold mb-6">Adicionar Novo Disco</h2>
+                    <form @submit.prevent="addRecord" class="max-w-xl mx-auto bg-card p-8 rounded-lg space-y-4">
+                        <div><label for="album" class="block text-sm font-medium">Álbum</label><input x-model="newRecord.album" type="text" id="album" required class="w-full mt-1 p-3 bg-input border border-custom rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-custom" placeholder="The Dark Side of the Moon"></div>
+                        <div><label for="artist" class="block text-sm font-medium">Artista</label><input x-model="newRecord.artist" type="text" id="artist" required class="w-full mt-1 p-3 bg-input border border-custom rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-custom" placeholder="Pink Floyd"></div>
+                        <div><label for="year" class="block text-sm font-medium">Ano</label><input x-model="newRecord.year" type="number" id="year" class="w-full mt-1 p-3 bg-input border border-custom rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-custom" placeholder="1973"></div>
+                        <div><label for="cover_url" class="block text-sm font-medium">URL da Capa (Opcional)</label><input x-model="newRecord.cover_url" type="text" id="cover_url" class="w-full mt-1 p-3 bg-input border border-custom rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-custom" placeholder="https://exemplo.com/capa.jpg"></div>
+                        <button type="submit" :disabled="loading" class="w-full py-3 font-semibold rounded-md btn-primary flex items-center justify-center"><span x-show="!loading">Salvar Disco</span><span x-show="loading" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span></button>
+                    </form>
+                </div>
+                <!-- Community View -->
+                 <div x-show="appView === 'community'">
+                    <h2 class="text-3xl font-bold mb-6">Comunidade</h2>
+                    <div class="bg-card p-8 rounded-lg text-center"><i data-lucide="construction" class="mx-auto h-16 w-16 text-yellow-500 mb-4"></i><h3 class="text-2xl font-bold">Em Construção</h3><p class="text-gray-400 mt-2">A área da comunidade está sendo preparada!</p></div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+        function app() {
+            return {
+                API_BASE_URL: '', // <-- IMPORTANTE: COLOQUE A URL DA SUA API DO RENDER AQUI!
+                isLoggedIn: false,
+                loading: false,
+                view: 'landing', // landing, login, register
+                appView: 'collection', // collection, add-record, community
+                credentials: { email: '', password: '' },
+                newUser: { name: '', email: '', password: '' },
+                collection: [],
+                newRecord: { album: '', artist: '', year: '', cover_url: '' },
+                notification: { show: false, message: '', type: 'success' },
+
+                init() {
+                    lucide.createIcons();
+                    const token = localStorage.getItem('authToken');
+                    if (token) {
+                        this.isLoggedIn = true;
+                        this.fetchCollection();
+                    }
+                    if (!this.API_BASE_URL) {
+                        console.warn("URL da API não configurada. A aplicação não funcionará online.");
+                        this.showNotification('API não configurada. O app não pode se conectar ao servidor.', 'error');
+                    }
+                },
+                
+                showNotification(message, type = 'success') {
+                    this.notification.message = message;
+                    this.notification.type = type;
+                    this.notification.show = true;
+                    setTimeout(() => this.notification.show = false, 3000);
+                },
+
+                async handleRequest(endpoint, options) {
+                    this.loading = true;
+                    try {
+                        const response = await fetch(`${this.API_BASE_URL}${endpoint}`, options);
+                        const data = await response.json();
+                        if (!response.ok) throw new Error(data.message || 'Ocorreu um erro.');
+                        return data;
+                    } catch (error) {
+                        this.showNotification(error.message, 'error');
+                        throw error;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async login() {
+                    try {
+                        const data = await this.handleRequest('/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.credentials)
+                        });
+                        localStorage.setItem('authToken', data.access_token);
+                        this.isLoggedIn = true;
+                        this.appView = 'collection';
+                        this.fetchCollection();
+                        this.credentials = { email: '', password: '' };
+                    } catch (error) { console.error('Falha no login:', error); }
+                },
+
+                async register() {
+                    try {
+                        const data = await this.handleRequest('/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.newUser)
+                        });
+                        this.showNotification('Usuário registrado com sucesso! Faça o login.');
+                        this.view = 'login';
+                        this.newUser = { name: '', email: '', password: '' };
+                    } catch (error) { console.error('Falha no registro:', error); }
+                },
+
+                logout() {
+                    localStorage.removeItem('authToken');
+                    this.isLoggedIn = false;
+                    this.view = 'landing';
+                    this.collection = [];
+                },
+
+                async fetchCollection() {
+                    const token = localStorage.getItem('authToken');
+                    if (!token) return;
+                    try {
+                        const data = await this.handleRequest('/collection', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        this.collection = data;
+                    } catch (error) {
+                        console.error('Falha ao buscar coleção:', error);
+                        if (error.message.includes('token')) this.logout();
+                    }
+                },
+
+                async addRecord() {
+                    const token = localStorage.getItem('authToken');
+                    if (!token) return;
+                    try {
+                        await this.handleRequest('/records', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                            body: JSON.stringify(this.newRecord)
+                        });
+                        this.showNotification('Disco adicionado com sucesso!');
+                        this.newRecord = { album: '', artist: '', year: '', cover_url: '' };
+                        this.appView = 'collection';
+                        this.fetchCollection();
+                    } catch (error) { console.error('Falha ao adicionar disco:', error); }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
