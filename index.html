@@ -26,7 +26,7 @@
         <!-- Notificação Global -->
         <div x-show="notification.show" 
              class="fixed top-5 right-5 z-50 p-4 rounded-md shadow-lg text-white"
-             :class="{'bg-green-600': notification.type === 'success', 'bg-red-600': notification.type === 'error'}"
+             :class="{'bg-green-600': notification.type === 'success', 'bg-red-600': notification.type === 'error', 'bg-blue-600': notification.type === 'info'}"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 transform translate-x-full"
              x-transition:enter-end="opacity-100 transform translate-x-0"
@@ -161,6 +161,7 @@
 
             init() {
                 lucide.createIcons();
+                this.warmup(); // Chamada para aquecer o servidor da API
                 const token = localStorage.getItem('authToken');
                 if (token) {
                     this.isLoggedIn = true;
@@ -172,11 +173,25 @@
                 }
             },
             
-            showNotification(message, type = 'success') {
+            showNotification(message, type = 'success', stay = false) {
+                clearTimeout(this.notificationTimeout);
                 this.notification.message = message;
                 this.notification.type = type;
                 this.notification.show = true;
-                setTimeout(() => this.notification.show = false, 3000);
+                if (!stay) {
+                    this.notificationTimeout = setTimeout(() => this.notification.show = false, 3000);
+                }
+            },
+
+            async warmup() {
+                this.showNotification('Iniciando o servidor da API...', 'info', true);
+                try {
+                    await fetch(this.API_BASE_URL + '/warmup');
+                } catch (e) {
+                    // Ignoramos erros de conexão, pois o servidor pode não responder com 200
+                } finally {
+                    this.showNotification('Servidor pronto!', 'success');
+                }
             },
 
             async handleRequest(endpoint, options) {
