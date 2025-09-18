@@ -18,7 +18,7 @@ CORS(app, resources={r"/*": {"origins": FRONTEND_URL}}, supports_credentials=Tru
 # Banco de Dados (MySQL via SQLAlchemy)
 # Use DATABASE_URL configurada no Render, ex:
 # mysql+pymysql://root:senha@host:porta/banco
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('mysql+pymysql://root:mSSAEaamMLibNKtugQjUFvWPIHdsPVgy@centerbeam.proxy.rlwy.net:49185/railway')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # JWT
@@ -117,3 +117,4 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
