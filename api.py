@@ -48,6 +48,15 @@ class Record(db.Model):
 
 
 # --- ROTAS DA API ---
+# Rota para criar o banco de dados. EXCLUA esta rota depois de usar.
+@app.route('/create_db', methods=['GET'])
+def create_db():
+    try:
+        db.create_all()
+        return jsonify({'message': 'Tabelas do banco de dados criadas com sucesso!'}), 200
+    except Exception as e:
+        return jsonify({'message': f'Erro ao criar tabelas do banco de dados: {str(e)}'}), 500
+
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -107,8 +116,8 @@ def add_record():
     data = request.get_json()
     
     if not data or not data.get('album') or not data.get('artist'):
-         return jsonify({'message': 'Álbum e Artista são obrigatórios.'}), 400
-         
+            return jsonify({'message': 'Álbum e Artista são obrigatórios.'}), 400
+            
     new_record = Record(
         album=data['album'], artist=data['artist'], year=data.get('year'),
         cover_url=data.get('cover_url'), user_id=current_user_id
@@ -124,9 +133,10 @@ def add_record():
 
 if __name__ == '__main__':
     with app.app_context():
-        # Cria as tabelas no banco de dados se elas não existirem
-        db.create_all()
+        # A criação de tabelas deve ser executada apenas uma vez, idealmente via um comando de deploy ou shell.
+        # Por padrão, vamos comentar a linha para evitar problemas de reinicialização.
+        # db.create_all()
+        pass
     # A porta é pega de uma variável de ambiente, padrão para 5000 localmente
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-
