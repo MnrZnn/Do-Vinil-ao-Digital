@@ -145,125 +145,121 @@
     </div>
     
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script>
-        function app() {
-            return {
-                API_BASE_URL: 'https://vinil-digital-api.onrender.com'
-                isLoggedIn: false,
-                loading: false,
-                view: 'landing', // landing, login, register
-                appView: 'collection', // collection, add-record, community
-                credentials: { email: '', password: '' },
-                newUser: { name: '', email: '', password: '' },
-                collection: [],
-                newRecord: { album: '', artist: '', year: '', cover_url: '' },
-                notification: { show: false, message: '', type: 'success' },
+   <script>
+    function app() {
+        return {
+            API_BASE_URL: 'https://vinil-digital-api.onrender.com',
+            isLoggedIn: false,
+            loading: false,
+            view: 'landing', // landing, login, register
+            appView: 'collection', // collection, add-record, community
+            credentials: { email: '', password: '' },
+            newUser: { name: '', email: '', password: '' },
+            collection: [],
+            newRecord: { album: '', artist: '', year: '', cover_url: '' },
+            notification: { show: false, message: '', type: 'success' },
 
-                init() {
-                    lucide.createIcons();
-                    const token = localStorage.getItem('authToken');
-                    if (token) {
-                        this.isLoggedIn = true;
-                        this.fetchCollection();
-                    }
-                    if (!this.API_BASE_URL) {
-                        console.warn("URL da API não configurada. A aplicação não funcionará online.");
-                        this.showNotification('API não configurada. O app não pode se conectar ao servidor.', 'error');
-                    }
-                },
-                
-                showNotification(message, type = 'success') {
-                    this.notification.message = message;
-                    this.notification.type = type;
-                    this.notification.show = true;
-                    setTimeout(() => this.notification.show = false, 3000);
-                },
-
-                async handleRequest(endpoint, options) {
-                    this.loading = true;
-                    try {
-                        const response = await fetch(`${this.API_BASE_URL}${endpoint}`, options);
-                        const data = await response.json();
-                        if (!response.ok) throw new Error(data.message || 'Ocorreu um erro.');
-                        return data;
-                    } catch (error) {
-                        this.showNotification(error.message, 'error');
-                        throw error;
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-
-                async login() {
-                    try {
-                        const data = await this.handleRequest('/login', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(this.credentials)
-                        });
-                        localStorage.setItem('authToken', data.access_token);
-                        this.isLoggedIn = true;
-                        this.appView = 'collection';
-                        this.fetchCollection();
-                        this.credentials = { email: '', password: '' };
-                    } catch (error) { console.error('Falha no login:', error); }
-                },
-
-                async register() {
-                    try {
-                        const data = await this.handleRequest('/register', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(this.newUser)
-                        });
-                        this.showNotification('Usuário registrado com sucesso! Faça o login.');
-                        this.view = 'login';
-                        this.newUser = { name: '', email: '', password: '' };
-                    } catch (error) { console.error('Falha no registro:', error); }
-                },
-
-                logout() {
-                    localStorage.removeItem('authToken');
-                    this.isLoggedIn = false;
-                    this.view = 'landing';
-                    this.collection = [];
-                },
-
-                async fetchCollection() {
-                    const token = localStorage.getItem('authToken');
-                    if (!token) return;
-                    try {
-                        const data = await this.handleRequest('/collection', {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        this.collection = data;
-                    } catch (error) {
-                        console.error('Falha ao buscar coleção:', error);
-                        if (error.message.includes('token')) this.logout();
-                    }
-                },
-
-                async addRecord() {
-                    const token = localStorage.getItem('authToken');
-                    if (!token) return;
-                    try {
-                        await this.handleRequest('/records', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                            body: JSON.stringify(this.newRecord)
-                        });
-                        this.showNotification('Disco adicionado com sucesso!');
-                        this.newRecord = { album: '', artist: '', year: '', cover_url: '' };
-                        this.appView = 'collection';
-                        this.fetchCollection();
-                    } catch (error) { console.error('Falha ao adicionar disco:', error); }
+            init() {
+                lucide.createIcons();
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    this.isLoggedIn = true;
+                    this.fetchCollection();
                 }
+                if (!this.API_BASE_URL) {
+                    console.warn("URL da API não configurada. A aplicação não funcionará online.");
+                    this.showNotification('API não configurada. O app não pode se conectar ao servidor.', 'error');
+                }
+            },
+            
+            showNotification(message, type = 'success') {
+                this.notification.message = message;
+                this.notification.type = type;
+                this.notification.show = true;
+                setTimeout(() => this.notification.show = false, 3000);
+            },
+
+            async handleRequest(endpoint, options) {
+                this.loading = true;
+                try {
+                    const response = await fetch(`${this.API_BASE_URL}${endpoint}`, options);
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || 'Ocorreu um erro.');
+                    return data;
+                } catch (error) {
+                    this.showNotification(error.message, 'error');
+                    throw error;
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            async login() {
+                try {
+                    const data = await this.handleRequest('/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.credentials)
+                    });
+                    localStorage.setItem('authToken', data.access_token);
+                    this.isLoggedIn = true;
+                    this.appView = 'collection';
+                    this.fetchCollection();
+                    this.credentials = { email: '', password: '' };
+                } catch (error) { console.error('Falha no login:', error); }
+            },
+
+            async register() {
+                try {
+                    const data = await this.handleRequest('/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.newUser)
+                    });
+                    this.showNotification('Usuário registrado com sucesso! Faça o login.');
+                    this.view = 'login';
+                    this.newUser = { name: '', email: '', password: '' };
+                } catch (error) { console.error('Falha no registro:', error); }
+            },
+
+            logout() {
+                localStorage.removeItem('authToken');
+                this.isLoggedIn = false;
+                this.view = 'landing';
+                this.collection = [];
+            },
+
+            async fetchCollection() {
+                const token = localStorage.getItem('authToken');
+                if (!token) return;
+                try {
+                    const data = await this.handleRequest('/collection', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    this.collection = data;
+                } catch (error) {
+                    console.error('Falha ao buscar coleção:', error);
+                    if (error.message.includes('token')) this.logout();
+                }
+            },
+
+            async addRecord() {
+                const token = localStorage.getItem('authToken');
+                if (!token) return;
+                try {
+                    await this.handleRequest('/records', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify(this.newRecord)
+                    });
+                    this.showNotification('Disco adicionado com sucesso!');
+                    this.newRecord = { album: '', artist: '', year: '', cover_url: '' };
+                    this.appView = 'collection';
+                    this.fetchCollection();
+                } catch (error) { console.error('Falha ao adicionar disco:', error); }
             }
         }
-    </script>
+    }
+</script>
 </body>
 </html>
-
-
-
-
